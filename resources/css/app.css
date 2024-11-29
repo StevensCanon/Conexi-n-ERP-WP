@@ -1,3 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+body{
+
+    background-color: rgb(0, 0, 0);
+}
+
+
+.inactive-nav-link svg {
+    @apply text-zinc-200 dark:text-zinc-200;
+}
+
+.active-nav-link {
+    @apply bg-red-700 dark:bg-red-800;
+}
+

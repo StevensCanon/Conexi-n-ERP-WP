@@ -7,6 +7,56 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Installation
+
+Instala las dependencias con Composer
+- composer install
+- npm i ó npm install, para dependencias extras.
+
+Copia el archivo .env.example a uno nuevo archivo .env ( Asegurarse de colocar los datos de la conexion a base de datos)
+- cp .env.example .env
+
+Generar la clave para la aplicación
+- php artisan key:generate
+
+Ejecutar las migraciones
+- php artisan migrate
+
+Ejecutar los seeders
+- php artisan db:seed
+
+Realizar estos pasos, en caso tal que presenete problemas o cada vez que se ejecute una acción (opcional)
+- php artisan cache:clear
+- php artisan config:clear
+- php artisan route:clear
+- php artisan view:clear
+
+Si se va a trabajar en un entorno windows, el comando se puede utilizar a traves de un programador de tareas.
+- 1. Dirigirse al programador de tareas.
+- 2. En acciones seleccionar, crear tarea.
+- 3. En general colocarle un nombre, para identificarla.
+- 4. En desencadenadores especificar cada cuanto desean que se ejecute el comando.
+- 5. En acciones, como accion selecionaran "Iniciar un programa".
+- 6. En acciones, como programa o script, colocaran la ruta de su ejecutable de php algo como esto "C:\xampp\php\php.exe".
+- 7. En acciones, en agregar argumentos, colocaran la ruta de su proyecto seguido del comando, deberia verse algo asi "C:\xampp\htdocs\Proyecto-api-wordpress\artisan sync:orders"
+- 8. En acciones, en iniciar en, colocaran la ruta de su proyecto, deberia verse algo asi "C:\xampp\htdocs\Proyecto-api-wordpress"
+
+En Linux:
+- Traslada la configuración del comando de Kernel.php a routes/console.php, ya que Laravel 11 dejó de utilizar Kernel para estos comandos en tareas programadas.
+- Modifica la lógica de tiempo dentro de app\Console\Commands\SyncOrderToErpc.php.
+- Configura el CRON en tu sistema para que ejecute php artisan schedule:run
+
+
+Para iniciar el proyecto:
+Para el frontend (Vite)
+- npm run dev
+
+Para el backend (Laravel)
+- php artisan serve
+
+Ambos deben estar iniciados en el mismo momento, cada una en su respectiva terminal, claro esta.
+
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

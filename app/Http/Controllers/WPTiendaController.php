@@ -4,31 +4,75 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Store;
+use Illuminate\Support\Facades\Log;
 
+
+/**
+ * @OA\Info(title="API Usuarios", version="1.0")
+ *
+ * @OA\Server(url="http://localhost:8000")
+ */
 class WPTiendaController extends Controller
 {
     public $client;
     public $url;
+    public $store;
 
-
-    //Declaro e inicializo las variables para conectarme a mi cliente api.
-    public function __construct()
+    // Declaro e inicializo las variables para conectarme a mi cliente API, esto es para hacer pruebas, mediante la ruta.
+    public function testApiConnection($storeId)
     {
-        $this->url = config('services.wp_tienda.url');
+        // Obtener la tienda por ID
+        $store = Store::findOrFail($storeId);
 
-        $this->client = new Client([
-            'auth' => [
-                config('services.wp_tienda.key'),
-                config('services.wp_tienda.secret'),
-            ],
-            'headers' => [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ],
-        ]);
+        // Obtener el cliente API de la tienda
+        $client = $store->getApiClient();
+
+        try {
+            // Realizar una solicitud de prueba a la API, por ejemplo, obteniendo datos de productos
+            $response = $client->get('orders');  // Ajusta la ruta según lo que quieras consultar de la API
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
-    // Funcion para obtener todos los pedidos
+    /**
+     * @OA\Get(
+     *     path="/api/orders",
+     *     summary="Mostrar todos los pedidos",
+     *     tags={"Pedidos"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Retorna todos los pedidos.",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="order_number", type="string"),
+     *                 @OA\Property(property="status", type="string"),
+     *                 @OA\Property(property="currency", type="string"),
+     *                 @OA\Property(property="total", type="number", format="float"),
+     *                 @OA\Property(property="line_items", type="array", @OA\Items(type="object"))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="500",
+     *         description="Error al obtener los pedidos."
+     *     )
+     * )
+     */
     public function getOrders()
     {
         try {
@@ -41,7 +85,36 @@ class WPTiendaController extends Controller
         }
     }
 
-    // Funcion para obtener un pedido específico por ID
+    /**
+     * @OA\Get(
+     *     path="/api/orders/{id}",
+     *     summary="Mostrar un pedido específico por ID",
+     *     tags={"Pedidos"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Mostrar un pedido específico.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="order_number", type="string"),
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="currency", type="string"),
+     *             @OA\Property(property="total", type="number", format="float"),
+     *             @OA\Property(property="line_items", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="500",
+     *         description="Error al obtener el pedido."
+     *     )
+     * )
+     */
     public function getOrder($id)
     {
         try {
@@ -54,7 +127,42 @@ class WPTiendaController extends Controller
         }
     }
 
-    // Funcion para crear un nuevo pedido, con validaciones
+    /**
+     * @OA\Post(
+     *     path="/api/orders",
+     *     summary="Crear un nuevo pedido",
+     *     tags={"Pedidos"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"billing", "shipping", "line_items", "total", "subtotal"},
+     *             @OA\Property(property="billing", type="object"),
+     *             @OA\Property(property="shipping", type="object"),
+     *             @OA\Property(property="line_items", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="total", type="number", format="float"),
+     *             @OA\Property(property="subtotal", type="number", format="float"),
+     *             @OA\Property(property="discount_total", type="number", format="float"),
+     *             @OA\Property(property="shipping_total", type="number", format="float"),
+     *             @OA\Property(property="payment_method", type="string"),
+     *             @OA\Property(property="payment_method_title", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Pedido creado correctamente.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="order_number", type="string"),
+     *             @OA\Property(property="total", type="number", format="float")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="500",
+     *         description="Error al crear el pedido."
+     *     )
+     * )
+     */
     public function createOrder(Request $request)
     {
         $request->validate([
@@ -91,7 +199,27 @@ class WPTiendaController extends Controller
         }
     }
 
-    // Funcion para eliminar un pedido por ID
+    /**
+     * @OA\Delete(
+     *     path="/api/orders/{id}",
+     *     summary="Eliminar un pedido",
+     *     tags={"Pedidos"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=204,
+     *         description="Pedido eliminado correctamente."
+     *     ),
+     *     @OA\Response(
+     *         response="500",
+     *         description="Error al eliminar el pedido."
+     *     )
+     * )
+     */
     public function deleteOrder($id)
     {
         try {
@@ -103,7 +231,45 @@ class WPTiendaController extends Controller
         }
     }
 
-    // Funcion para actualizar un pedido existente
+    /**
+     * @OA\Put(
+     *     path="/api/orders/{id}",
+     *     summary="Actualizar un pedido",
+     *     tags={"Pedidos"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"billing", "shipping", "total"},
+     *             @OA\Property(property="billing", type="object"),
+     *             @OA\Property(property="shipping", type="object"),
+     *             @OA\Property(property="total", type="number", format="float"),
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="payment_method", type="string"),
+     *             @OA\Property(property="payment_method_title", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Pedido actualizado correctamente.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="order_number", type="string"),
+     *             @OA\Property(property="total", type="number", format="float")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="500",
+     *         description="Error al actualizar el pedido."
+     *     )
+     * )
+     */
     public function updateOrder(Request $request, $id)
     {
         $request->validate([
